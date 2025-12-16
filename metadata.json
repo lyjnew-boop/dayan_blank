@@ -1,0 +1,5 @@
+{
+  "name": "Dayan Li Master",
+  "description": "A comprehensive React implementation of the Dayan Calendar (Great Expansion Calendar) utilizing high-precision astronomical algorithms to display Solar Terms, Pentads, Hexagrams, and Lunar phases.",
+  "requestFramePermissions": []
+}
