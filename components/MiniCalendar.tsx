@@ -1,5 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { Theme } from '../styles/theme';
 
 interface MiniCalendarProps {
   selectedDate: Date;
@@ -86,37 +88,37 @@ export const MiniCalendar: React.FC<MiniCalendarProps> = ({ selectedDate, onSele
 
   return (
     <div 
-      className="bg-[#1c1917] border border-amber-900/60 rounded-md shadow-2xl p-4 w-72 font-serif text-stone-200 select-none"
+      className={Theme.calendar.container}
       onClick={(e) => e.stopPropagation()}
     >
       {/* Header */}
-      <div className="flex justify-between items-center mb-4 pb-2 border-b border-stone-800 gap-1">
+      <div className={Theme.calendar.header}>
         <button 
             onClick={handlePrevMonth} 
-            className="p-1 hover:text-amber-500 hover:bg-stone-800 rounded transition-colors shrink-0"
+            className={Theme.calendar.navButton}
             title="上个月"
         >
           <ChevronLeft size={18} />
         </button>
         
-        <div className="flex items-center justify-center gap-2 font-bold text-base tracking-widest text-amber-500 flex-1">
+        <div className={Theme.calendar.titleContainer}>
            {/* Year Input */}
-           <div className="flex items-center group">
+           <div className={Theme.calendar.inputGroup}>
              <input 
                type="number" 
                value={year}
                onChange={handleYearChange}
-               className="w-14 bg-transparent text-right border-b border-transparent group-hover:border-stone-700 focus:border-amber-500 outline-none appearance-none m-0 p-0 hover:text-amber-400 focus:text-amber-400 transition-colors"
+               className={Theme.calendar.yearInput}
              />
              <span className="ml-1 text-sm">年</span>
            </div>
            
            {/* Month Select */}
-           <div className="flex items-center group">
+           <div className={Theme.calendar.inputGroup}>
              <select 
                value={month} 
                onChange={handleMonthChange}
-               className="bg-[#1c1917] text-right border-b border-transparent group-hover:border-stone-700 focus:border-amber-500 outline-none appearance-none cursor-pointer pr-1 hover:text-amber-400 focus:text-amber-400 transition-colors"
+               className={Theme.calendar.monthSelect}
              >
                {Array.from({length: 12}, (_, i) => (
                  <option key={i} value={i}>{i + 1}</option>
@@ -128,7 +130,7 @@ export const MiniCalendar: React.FC<MiniCalendarProps> = ({ selectedDate, onSele
 
         <button 
             onClick={handleNextMonth} 
-            className="p-1 hover:text-amber-500 hover:bg-stone-800 rounded transition-colors shrink-0"
+            className={Theme.calendar.navButton}
             title="下个月"
         >
           <ChevronRight size={18} />
@@ -136,17 +138,32 @@ export const MiniCalendar: React.FC<MiniCalendarProps> = ({ selectedDate, onSele
       </div>
 
       {/* Grid */}
-      <div className="grid grid-cols-7 gap-1 text-center mb-2">
+      <div className={Theme.calendar.gridHeader}>
         {weekDays.map(d => (
           <div key={d} className="text-xs text-stone-500 font-bold">{d}</div>
         ))}
       </div>
-      <div className="grid grid-cols-7 gap-1">
+      <div className={Theme.calendar.grid}>
         {days.map((item, idx) => {
           const d = item.date;
           const isSelected = isSameDay(d, selectedDate);
           const isDayToday = isToday(d);
           const isCurrent = item.isCurrentMonth;
+
+          let cellClass = Theme.calendar.dayCell;
+          if (!isCurrent) cellClass += ` ${Theme.calendar.dayCellInactive}`;
+          
+          if (isSelected) {
+             cellClass += ` ${Theme.calendar.dayCellSelected}`;
+          } else if (isCurrent) {
+             cellClass += ` ${Theme.calendar.dayCellHover}`;
+          } else {
+             cellClass += ' hover:bg-stone-900';
+          }
+
+          if (isDayToday && !isSelected) {
+             cellClass += ` ${Theme.calendar.dayCellToday}`;
+          }
 
           return (
             <button
@@ -155,15 +172,7 @@ export const MiniCalendar: React.FC<MiniCalendarProps> = ({ selectedDate, onSele
                 onSelectDate(d);
                 onClose();
               }}
-              className={`
-                h-8 w-8 rounded-full flex items-center justify-center text-sm transition-all
-                ${!isCurrent ? 'opacity-30 text-stone-500' : ''}
-                ${isSelected 
-                  ? 'bg-amber-700 text-white font-bold shadow-lg shadow-amber-900/50 scale-110 z-10' 
-                  : isCurrent ? 'hover:bg-stone-800 hover:text-amber-400' : 'hover:bg-stone-900'
-                }
-                ${isDayToday && !isSelected ? 'border border-amber-700/50 text-amber-500' : ''}
-              `}
+              className={cellClass}
             >
               {d.getDate()}
             </button>
@@ -172,11 +181,11 @@ export const MiniCalendar: React.FC<MiniCalendarProps> = ({ selectedDate, onSele
       </div>
       
       {/* Footer */}
-      <div className="mt-4 pt-2 border-t border-stone-800 flex justify-between items-center text-xs">
-         <button onClick={onClose} className="text-stone-500 hover:text-stone-300 px-2 py-1">
+      <div className={Theme.calendar.footer}>
+         <button onClick={onClose} className={Theme.calendar.footerButton}>
             关闭
          </button>
-         <button onClick={handleTodayClick} className="text-amber-600 hover:text-amber-400 font-bold px-2 py-1">
+         <button onClick={handleTodayClick} className={Theme.calendar.footerAction}>
             回到今日
          </button>
       </div>

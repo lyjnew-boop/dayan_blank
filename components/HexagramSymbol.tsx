@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { Theme } from '../styles/theme';
 
 interface HexagramSymbolProps {
   binary: string; // e.g. "111000" (Bottom is index 0)
@@ -24,7 +25,7 @@ export const HexagramSymbol: React.FC<HexagramSymbolProps> = ({
   return (
     <div 
       style={{ width: size, height: size }} 
-      className="flex flex-col justify-between py-1"
+      className={Theme.hexagram.container}
       title={`Hexagram: ${binary}`}
     >
       {visualOrder.map((bit, idx) => {
@@ -35,25 +36,25 @@ export const HexagramSymbol: React.FC<HexagramSymbolProps> = ({
         return (
           <div 
             key={idx} 
-            className="w-full flex justify-between gap-1 h-[10%] transition-all duration-300"
+            className={Theme.hexagram.lineWrapper}
             style={{ opacity, filter: isActive ? `drop-shadow(0 0 2px ${color})` : 'none' }}
           >
             {bit === '1' ? (
               // Yang Line (Solid)
               <div 
-                className="w-full h-full rounded-sm" 
+                className={Theme.hexagram.solidLine} 
                 style={{ backgroundColor: color, boxShadow: glow }}
               ></div>
             ) : (
               // Yin Line (Broken)
               <>
                 <div 
-                  className="w-[45%] h-full rounded-sm" 
+                  className={Theme.hexagram.brokenLinePart} 
                   style={{ backgroundColor: color, boxShadow: glow }}
                 ></div>
-                <div className="w-[10%] h-full opacity-0"></div>
+                <div className={Theme.hexagram.brokenLineSpacer}></div>
                 <div 
-                  className="w-[45%] h-full rounded-sm" 
+                  className={Theme.hexagram.brokenLinePart} 
                   style={{ backgroundColor: color, boxShadow: glow }}
                 ></div>
               </>
