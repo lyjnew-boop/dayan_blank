@@ -4,36 +4,12 @@ import { DayanDateInfo } from '../types';
 import { HexagramSymbol } from './HexagramSymbol';
 import { BaZiChart } from './BaZiChart';
 import { Sun, Clock, Divide, Calculator, Scroll, Hourglass, Calendar, Activity, Database, ChevronRight } from 'lucide-react';
-
-// --- UNIFIED STYLE THEME ---
-const Theme = {
-  colors: {
-    primary: "text-amber-600",
-    highlight: "text-amber-500",
-    textMain: "text-stone-300",
-    textMuted: "text-stone-500",
-    border: "border-stone-800",
-    borderHighlight: "border-amber-900/30",
-  },
-  bg: {
-    panel: "bg-[#1a1816]",
-    card: "bg-[#24211f]",
-    dark: "bg-stone-900",
-    darker: "bg-stone-950",
-  },
-  components: {
-    card: "bg-[#1a1816] border border-amber-900/20 p-6 rounded-sm relative overflow-hidden group hover:border-amber-900/40 transition-colors",
-    headerIcon: "text-amber-600 scale-110",
-    headerTitle: "text-amber-500 text-base font-bold uppercase tracking-widest",
-    headerSubtitle: "text-xs text-stone-500 font-serif italic mt-0.5",
-    valueBox: "bg-stone-900/40 rounded border border-stone-800/50 text-center p-3",
-  }
-};
+import { Theme } from '../styles/theme';
 
 // --- REUSABLE SUB-COMPONENTS ---
 
 const SectionHeader: React.FC<{ title: string, subtitle?: string, icon?: React.ReactNode }> = ({ title, subtitle, icon }) => (
-  <div className="flex items-center gap-3 mb-5 border-b border-amber-900/20 pb-3">
+  <div className={Theme.components.sectionHeader}>
     <span className={Theme.components.headerIcon}>{icon}</span>
     <div>
       <h3 className={Theme.components.headerTitle}>{title}</h3>
@@ -43,7 +19,7 @@ const SectionHeader: React.FC<{ title: string, subtitle?: string, icon?: React.R
 );
 
 const DataRow: React.FC<{ label: string, value: React.ReactNode, subValue?: string }> = ({ label, value, subValue }) => (
-  <div className={`flex justify-between items-center py-2 border-b ${Theme.colors.border}/50 last:border-0`}>
+  <div className={Theme.components.dataRow}>
     <span className="text-sm text-stone-500 font-serif">{label}</span>
     <div className="flex flex-col items-end">
        <div className={`text-sm font-mono ${Theme.colors.primary}`}>{value}</div>
@@ -53,7 +29,7 @@ const DataRow: React.FC<{ label: string, value: React.ReactNode, subValue?: stri
 );
 
 const MathDisplay: React.FC<{ label: string, dividend: number, divisor: number, fraction: string, approx: string }> = ({ label, dividend, divisor, fraction, approx }) => (
-  <div className="flex flex-col border-l-2 border-amber-900/30 pl-4">
+  <div className={Theme.components.mathDisplay}>
     <span className="text-xs text-stone-500 uppercase tracking-wide">{label}</span>
     <div className="flex items-baseline gap-2 mt-1">
       <span className="text-sm font-mono text-stone-400">{dividend} ÷ {divisor} =</span>
@@ -79,10 +55,10 @@ export const DayanPanel: React.FC<Props> = ({ info }) => {
       
       {/* HEADER SECTION */}
       <div className={`md:col-span-12 ${Theme.bg.dark} border-t-2 border-b-2 ${Theme.colors.borderHighlight} py-12 text-center relative`}>
-         <div className="absolute top-3 left-5 text-xs text-stone-600 font-mono tracking-widest flex items-center gap-2">
+         <div className={`absolute top-3 left-5 flex items-center gap-2 ${Theme.typography.subtext}`}>
             大衍历经 (公元729) <span className="w-1.5 h-1.5 bg-amber-700 rounded-full"></span> 唐 · 开元
          </div>
-         <h1 className="text-6xl md:text-7xl font-serif font-bold text-stone-100 mb-3 tracking-tight">
+         <h1 className={Theme.typography.h1}>
            {info.lunarDateStr}
          </h1>
          <div className="flex justify-center items-center gap-6 text-amber-700/80 font-serif text-xl">
@@ -151,7 +127,7 @@ export const DayanPanel: React.FC<Props> = ({ info }) => {
                
                {/* Left: Date Info */}
                <div className="md:col-span-3 p-6 border-b md:border-b-0 md:border-r border-stone-800 flex flex-col justify-center items-center text-center bg-[#2a2624]">
-                   <span className="text-5xl font-serif text-amber-500 font-bold mb-2">{info.ganZhiDay}</span>
+                   <span className={Theme.typography.serifLg}>{info.ganZhiDay}</span>
                    <span className="text-xs text-stone-500 uppercase tracking-widest mb-4">值日干支</span>
                    <div className="w-full h-px bg-stone-800 mb-4"></div>
                    <div className="flex items-center gap-2 mb-1">
@@ -171,7 +147,7 @@ export const DayanPanel: React.FC<Props> = ({ info }) => {
                    </span>
                    
                    <HexagramSymbol 
-                      binary={info.dailyGua.binary} // Fixed: pass binary string, not the symbol char
+                      binary={info.dailyGua.binary} 
                       size={100} 
                       color="#b45309"
                       activeLineIndex={guaQi.isYong ? undefined : guaQi.yaoIndex}
@@ -191,7 +167,7 @@ export const DayanPanel: React.FC<Props> = ({ info }) => {
                    {/* Header: Significance Badge */}
                    <div className="flex items-center justify-between mb-4 relative z-10">
                        <div className="flex items-center gap-3">
-                           <span className="px-2 py-0.5 bg-amber-900/40 text-amber-500 text-xs rounded font-bold uppercase tracking-wider border border-amber-900/50">
+                           <span className={Theme.components.badge}>
                               {guaQi.significance}
                            </span>
                            <span className="text-sm font-bold text-amber-600">{guaQi.yaoName}</span>
@@ -202,7 +178,7 @@ export const DayanPanel: React.FC<Props> = ({ info }) => {
                    </div>
 
                    {/* Interpretation Box */}
-                   <div className="bg-[#1c1917]/80 p-4 border-l-2 border-amber-600 mb-5 shadow-inner backdrop-blur-sm relative z-10">
+                   <div className={Theme.components.interpretationBox}>
                        <span className="text-3xl font-serif text-amber-700/20 absolute -top-2 -left-1">“</span>
                        <p className="text-stone-300 font-serif text-lg leading-relaxed pl-2">
                           {guaQi.yaoText}
@@ -215,8 +191,9 @@ export const DayanPanel: React.FC<Props> = ({ info }) => {
                           <span>本爻进程</span>
                           <span>{Math.round(guaQi.currentFenInYao)} / {guaQi.totalFenInYao} 分</span>
                        </div>
-                       <div className="w-full h-1.5 bg-stone-800 rounded-full overflow-hidden">
-                          <div className="h-full bg-amber-700 transition-all duration-500" style={{ width: `${Math.min(100, Math.floor(yaoProgress))}%` }}></div>
+                       <div className={Theme.components.progressBarTrack}>
+                          {/* Inline style is necessary here for dynamic width based on data */}
+                          <div className={Theme.components.progressBarFill} style={{ width: `${Math.min(100, Math.floor(yaoProgress))}%` }}></div>
                        </div>
                    </div>
 
@@ -296,7 +273,7 @@ export const DayanPanel: React.FC<Props> = ({ info }) => {
                 </div>
             </div>
 
-            <div className={`flex flex-col gap-1 text-xs text-stone-500 ${Theme.bg.dark}/50 p-3 rounded`}>
+            <div className={`flex flex-col gap-1 text-xs text-stone-500 ${Theme.bg.translucent} p-3 rounded`}>
                  <div className="flex justify-between items-center">
                    <span className="flex items-center gap-2 text-stone-400"><Hourglass size={12} /> 一更 (甲夜)</span>
                    <span className="text-stone-300 font-mono text-sm">{info.timeKeeping.oneGengFen} 分</span>
