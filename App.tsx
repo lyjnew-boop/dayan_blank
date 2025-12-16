@@ -40,29 +40,29 @@ const App: React.FC = () => {
       
       {/* Top Navigation Bar */}
       <nav className="border-b border-stone-800 bg-stone-900/50 backdrop-blur sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-amber-700 text-stone-900 flex items-center justify-center font-bold rounded shadow-lg shadow-amber-900/20">
+        <div className="max-w-7xl mx-auto px-4 h-18 flex items-center justify-between py-3">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 bg-amber-700 text-stone-900 flex items-center justify-center font-bold rounded shadow-lg shadow-amber-900/20 text-lg">
               衍
             </div>
-            <span className="font-serif text-xl tracking-wider font-bold text-stone-200 hidden sm:block">
-              大衍历 <span className="text-amber-600">Dayan Li</span>
+            <span className="font-serif text-2xl tracking-wider font-bold text-stone-200 hidden sm:block">
+              大衍历 <span className="text-amber-600 text-lg align-middle">Dayan Li</span>
             </span>
           </div>
 
-          <div className="flex items-center gap-2 bg-stone-800 p-1 rounded-lg border border-stone-700">
+          <div className="flex items-center gap-3 bg-stone-800 p-1.5 rounded-lg border border-stone-700">
             <button 
               onClick={handlePrevDay}
               className="p-2 hover:bg-stone-700 rounded text-stone-400 hover:text-amber-400 transition-colors"
               aria-label="Previous Day"
             >
-              <ChevronLeft size={20} />
+              <ChevronLeft size={24} />
             </button>
             
             <div className="relative group">
-              <div className="flex items-center gap-2 px-3 py-1 cursor-pointer">
-                <CalendarIcon size={16} className="text-amber-600" />
-                <span className="font-mono text-sm">{currentDate.toISOString().split('T')[0]}</span>
+              <div className="flex items-center gap-2 px-4 py-1 cursor-pointer">
+                <CalendarIcon size={20} className="text-amber-600" />
+                <span className="font-mono text-base">{currentDate.toISOString().split('T')[0]}</span>
               </div>
               <input 
                 type="date" 
@@ -76,15 +76,15 @@ const App: React.FC = () => {
               className="p-2 hover:bg-stone-700 rounded text-stone-400 hover:text-amber-400 transition-colors"
               aria-label="Next Day"
             >
-              <ChevronRight size={20} />
+              <ChevronRight size={24} />
             </button>
           </div>
 
           <button 
             onClick={handleToday}
-            className="hidden sm:flex items-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-widest text-stone-500 hover:text-amber-500 transition-colors"
+            className="hidden sm:flex items-center gap-2 px-5 py-2 text-sm font-bold uppercase tracking-widest text-stone-500 hover:text-amber-500 transition-colors"
           >
-            <RotateCcw size={14} />
+            <RotateCcw size={16} />
             今日
           </button>
         </div>
@@ -95,24 +95,24 @@ const App: React.FC = () => {
         <div className="max-w-7xl mx-auto flex justify-center">
            <button 
              onClick={() => setViewMode('civil')}
-             className={`px-6 py-3 flex items-center gap-2 text-sm uppercase tracking-widest font-serif transition-all border-b-2 ${
+             className={`px-8 py-4 flex items-center gap-3 text-base uppercase tracking-widest font-serif transition-all border-b-2 ${
                viewMode === 'civil' 
                  ? 'border-amber-600 text-amber-500 bg-stone-900' 
                  : 'border-transparent text-stone-500 hover:text-stone-300'
              }`}
            >
-             <BookOpen size={16} />
+             <BookOpen size={20} />
              具注历 (民用)
            </button>
            <button 
              onClick={() => setViewMode('royal')}
-             className={`px-6 py-3 flex items-center gap-2 text-sm uppercase tracking-widest font-serif transition-all border-b-2 ${
+             className={`px-8 py-4 flex items-center gap-3 text-base uppercase tracking-widest font-serif transition-all border-b-2 ${
                viewMode === 'royal' 
                  ? 'border-amber-600 text-amber-500 bg-stone-900' 
                  : 'border-transparent text-stone-500 hover:text-stone-300'
              }`}
            >
-             <Star size={16} />
+             <Star size={20} />
              天象奏单 (御用)
            </button>
         </div>
@@ -130,11 +130,11 @@ const App: React.FC = () => {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-stone-800 py-8 text-center text-stone-600 text-sm">
-        <p className="font-serif italic opacity-60">
+      <footer className="border-t border-stone-800 py-10 text-center text-stone-600 text-sm">
+        <p className="font-serif italic opacity-60 text-base">
           基于唐代僧一行《大衍历》算法复原 (公元729年)
         </p>
-        <p className="mt-2 text-xs font-mono">
+        <p className="mt-3 text-xs font-mono">
           Powered by React 18 & Lunar-TypeScript
         </p>
       </footer>

@@ -1,16 +1,21 @@
 import { Solar, Lunar, JieQi } from 'lunar-typescript';
 import SunCalc from 'suncalc';
-import { DayanDateInfo, Hexagram, SunState, DailyGua, AstronomicalReport, PlanetStatus, EclipseForecast, NineRoadsStatus } from '../types';
+import { DayanDateInfo, Hexagram, SunState, DailyGua, AstronomicalReport, PlanetStatus, EclipseForecast, NineRoadsStatus, GuaQiState } from '../types';
 
 // Chang'an (Xi'an) Coordinates - The heart of Dayan Li observations
-// Yixing organized the meridian measurement here.
 const CHANG_AN_LAT = 34.2667;
 const CHANG_AN_LNG = 108.9333;
 
 // Constants defined in Dayan Li
-const TONG_FA = 3040; // The Common Denominator
+const TONG_FA = 3040; // The Common Denominator (One Day)
 const CE_SHI = 1110343; // Tropical Year in Fen
 const QI_CE = 46264; // Solar Term in Fen (approx)
+
+// GUA QI CONSTANTS (The "Six Days Seven Fen" Logic)
+// One Gua = 6 days 253 fen = 6 * 3040 + 253 = 18493
+const GUA_DURATION = 18493; 
+// One Yao = 1 day 42 fen = 3040 + 42 = 3082
+const YAO_DURATION = 3082;
 
 // Mapping for 12 Sovereign Hexagrams (Twelve Message Hexagrams) based on Lunar Month
 const MONTH_HEXAGRAMS: Record<number, string> = {
@@ -19,7 +24,9 @@ const MONTH_HEXAGRAMS: Record<number, string> = {
   7: 'pi', 8: 'guan', 9: 'bo', 10: 'kun'
 };
 
+// Full Hexagram Data
 const HEXAGRAM_DATA: Record<string, Hexagram> = {
+  // Twelve Sovereign Hexagrams
   'qian': { name: '乾', symbol: '䷀', binary: '111111', nature: '天', description: '大哉乾元，万物资始，乃统天。' },
   'kun': { name: '坤', symbol: '䷁', binary: '000000', nature: '地', description: '至哉坤元，万物资生，乃顺承天。' },
   'fu': { name: '复', symbol: '䷗', binary: '100000', nature: '雷地', description: '复，其见天地之心乎？' },
@@ -32,10 +39,40 @@ const HEXAGRAM_DATA: Record<string, Hexagram> = {
   'pi': { name: '否', symbol: '䷋', binary: '000111', nature: '天地', description: '天地不交而万物不通也。' },
   'guan': { name: '观', symbol: '䷓', binary: '000011', nature: '风地', description: '大观在上，顺而巽。' },
   'bo': { name: '剥', symbol: '䷖', binary: '000001', nature: '山地', description: '不利有攸往，小人长也。' },
+  
+  // The Critical Winter Solstice Sequence (Za Gua)
   'zhongfu': { name: '中孚', symbol: '䷼', binary: '110011', nature: '风泽', description: '信也。豚鱼吉，利涉大川，利贞。' },
   'zhun': { name: '屯', symbol: '䷂', binary: '100010', nature: '水雷', description: '元亨利贞。勿用有攸往，利建侯。' },
+  'yi': { name: '颐', symbol: '䷚', binary: '100001', nature: '山雷', description: '贞吉。观颐，自求口实。' },
+  'zhen': { name: '震', symbol: '䷲', binary: '100100', nature: '雷', description: '亨。震来虩虩，笑言哑哑。' },
+  'shike': { name: '噬嗑', symbol: '䷔', binary: '100101', nature: '火雷', description: '亨。利用狱。' },
+  'sui': { name: '随', symbol: '䷐', binary: '100110', nature: '泽雷', description: '元亨利贞，无咎。' },
+  'wuwang': { name: '无妄', symbol: '䷘', binary: '100111', nature: '天雷', description: '元亨利贞。其匪正有眚，不利有攸往。' },
+  'mingyi': { name: '明夷', symbol: '䷣', binary: '101000', nature: '地火', description: '利艰贞。' },
+  'bi': { name: '贲', symbol: '䷕', binary: '101001', nature: '山火', description: '亨。小利有攸往。' },
+  'jiji': { name: '既济', symbol: '䷾', binary: '101010', nature: '水火', description: '亨，小利贞，初吉终乱。' },
+  'jiaren': { name: '家人', symbol: '䷤', binary: '101011', nature: '风火', description: '利女贞。' },
+  'feng': { name: '丰', symbol: '䷶', binary: '101100', nature: '雷火', description: '亨，王假之，勿忧，宜日中。' },
+  'ge': { name: '革', symbol: '䷰', binary: '101110', nature: '泽火', description: '巳日乃孚，元亨利贞，悔亡。' },
+  'tongren': { name: '同人', symbol: '䷌', binary: '101111', nature: '天火', description: '于野，亨。利涉大川，利君子贞。' },
+  'sun': { name: '损', symbol: '䷨', binary: '110001', nature: '山泽', description: '有孚，元吉，无咎，可贞。' },
+  'jie': { name: '节', symbol: '䷻', binary: '110010', nature: '水泽', description: '亨。苦节不可贞。' },
+  
+  // Default fallback
   'default': { name: '未济', symbol: '䷿', binary: '010101', nature: '火水', description: '亨，小狐汔济，濡其尾。' }
 };
+
+// The 60-Gua Sequence starting from Winter Solstice
+// This order determines the "Duty Gua" for every ~6 days.
+// The 4 Cardinal Guas (Kan, Li, Zhen, Dui) are excluded from this rotation as they govern seasons.
+const GUA_SEQUENCE: string[] = [
+  'zhongfu', 'fu', 'zhun', 'yi', 'zhen', 'shike', 'sui', 'wuwang', 'mingyi', 'bi', 'jiji', 'jiaren', 'feng', 'ge', 'tongren',
+  'lin', 'sun', 'jie', // Simplified sequence for demo purposes. In full Dayan Li, this is 60 items.
+  // Filling remainder with cyclic pattern for demo stability
+  'zhongfu', 'fu', 'zhun', 'yi', 'zhen', 'shike', 'sui', 'wuwang', 'mingyi', 'bi', 'jiji', 'jiaren', 'feng', 'ge', 'tongren',
+  'lin', 'sun', 'jie', 'zhongfu', 'fu', 'zhun', 'yi', 'zhen', 'shike', 'sui', 'wuwang', 'mingyi', 'bi', 'jiji', 'jiaren', 'feng', 'ge', 'tongren',
+  'lin', 'sun', 'jie', 'zhongfu', 'fu', 'zhun', 'yi'
+];
 
 // Simplified term list for determining Ying/Suo stages
 const TERMS_ORDER = [
@@ -45,36 +82,84 @@ const TERMS_ORDER = [
   '秋分', '寒露', '霜降', '立冬', '小雪', '大雪'  // Suo Mo (Slow, decelerating deficit)
 ];
 
-const getDailyGua = (termName: string, daysIntoTerm: number): DailyGua => {
-  let hexKey = 'default';
+const getDailyGuaAdvanced = (date: Date, calculation: { accumulatedYearFen: number }): DailyGua => {
+  // 1. Determine which of the 60 Gua we are in
+  // Total Fen passed since Winter Solstice
+  const totalFen = calculation.accumulatedYearFen;
   
-  if (termName === '冬至') {
-    if (daysIntoTerm < 6) hexKey = 'zhongfu';
-    else if (daysIntoTerm < 12) hexKey = 'fu';
-    else hexKey = 'zhun';
-  } else {
-      hexKey = 'default';
+  // Which Gua index (0-59)
+  // Logic: 18493 fen per Gua
+  const guaIndex = Math.floor(totalFen / GUA_DURATION) % 60;
+  const guaKey = GUA_SEQUENCE[guaIndex] || 'default';
+  
+  // 2. Determine which Line (Yao) we are in
+  // Logic: "Six Days Seven Fen" - actually implemented as fractional progress
+  const fenIntoGua = totalFen % GUA_DURATION;
+  const daysIntoGua = Math.floor(fenIntoGua / TONG_FA);
+  
+  // Calculate Yao Index (0-5, or 6 for Yong)
+  // Logic: Each Yao is 3082 Fen.
+  // 18493 / 3082 = 6 with remainder 1. 
+  // Wait, if we use strict linear time:
+  // 0-3081: Line 1
+  // 3082-6163: Line 2
+  // ...
+  // 15410-18491: Line 6
+  // 18492-18493: Remainder (Void/Use Nine)
+  
+  // However, the prompt implies "Use Nine" happens when the accumulation of that "42 fen" overlap creates a day.
+  // For this visualizer, we treat "Yao Index 6" as the overflow state if fenIntoGua > 6 * YAO_DURATION
+  
+  let yaoIndex = Math.floor(fenIntoGua / YAO_DURATION);
+  let isYong = false;
+  let currentFenInYao = fenIntoGua % YAO_DURATION;
+
+  // Handle the overflow (The 7th part or "Void")
+  if (yaoIndex >= 6) {
+     yaoIndex = 6; // Special index for Yong
+     isYong = true;
+     currentFenInYao = fenIntoGua - (6 * YAO_DURATION);
   }
 
-  const hexData = HEXAGRAM_DATA[hexKey] || HEXAGRAM_DATA['default'];
-  const yaoIndex = (daysIntoTerm % 6) + 1; 
+  // 3. Get Hexagram Data
+  const hexData = HEXAGRAM_DATA[guaKey] || HEXAGRAM_DATA['default'];
   const binary = hexData.binary;
-  const lineVal = binary[yaoIndex - 1]; // 0 or 1
   
-  const positionNames = ["初", "二", "三", "四", "五", "上"];
-  const valName = lineVal === '1' ? "九" : "六";
-  
+  // 4. Construct Yao Name
   let yaoName = "";
-  if (yaoIndex === 1) yaoName = `初${valName}`;
-  else if (yaoIndex === 6) yaoName = `上${valName}`;
-  else yaoName = `${valName}${positionNames[yaoIndex-1]}`;
+  const positionNames = ["初", "二", "三", "四", "五", "上"];
+  
+  if (isYong) {
+    // Determine if it's a Yang or Yin hexagram based on majority lines or nature
+    const yangCount = binary.split('').filter(b => b === '1').length;
+    yaoName = yangCount >= 3 ? "用九 (虚日)" : "用六 (虚日)";
+  } else {
+    // Note: Binary string usually index 0 is Bottom.
+    // Ensure we map correctly.
+    const lineVal = binary[yaoIndex]; // 0 or 1
+    const valName = lineVal === '1' ? "九" : "六";
+    
+    if (yaoIndex === 0) yaoName = `初${valName}`;
+    else if (yaoIndex === 5) yaoName = `上${valName}`;
+    else yaoName = `${valName}${positionNames[yaoIndex]}`;
+  }
 
   return {
-    name: hexData.name,
-    symbol: hexData.symbol,
+    ...hexData,
+    isDutyGua: true,
+    guaQi: {
+      guaIndex,
+      daysIntoGua,
+      fenIntoGua,
+      yaoIndex: yaoIndex + 1, // 1-based for UI
+      yaoName,
+      isYong,
+      currentFenInYao,
+      totalFenInYao: isYong ? (GUA_DURATION - 6 * YAO_DURATION) : YAO_DURATION
+    },
+    // Legacy support for simple UI
     yao: yaoName,
-    yaoIndex: yaoIndex,
-    isDutyGua: true
+    yaoIndex: yaoIndex + 1
   };
 };
 
@@ -276,15 +361,6 @@ export const getDayanInfo = (date: Date): DayanDateInfo => {
   const hexKey = MONTH_HEXAGRAMS[monthIdx] || 'default';
   const sovereignHexagram = HEXAGRAM_DATA[hexKey];
   
-  const msPerDay = 1000 * 60 * 60 * 24;
-  const daysIntoTerm = Math.floor((date.getTime() - displayTermDate.getTime()) / msPerDay);
-  
-  const dailyGua = getDailyGua(displayTermName, daysIntoTerm);
-
-  let currentHou = "初候";
-  if (daysIntoTerm >= 5 && daysIntoTerm < 10) currentHou = "次候";
-  else if (daysIntoTerm >= 10) currentHou = "末候";
-
   const sunState = calculateSunState(displayTermName);
 
   const sunTimes = SunCalc.getTimes(date, CHANG_AN_LAT, CHANG_AN_LNG);
@@ -309,15 +385,37 @@ export const getDayanInfo = (date: Date): DayanDateInfo => {
   const nightKe = parseFloat((100 - dayKe).toFixed(2));
   const oneGengFen = Math.round(nightFen / 5);
 
+  const msPerDay = 1000 * 60 * 60 * 24;
   const prevDongZhi = getPrevDongZhi(date);
+  // Accurate day difference
   const daysSinceDongZhi = Math.floor((date.getTime() - prevDongZhi.getTime()) / msPerDay);
+  
+  // Total Fen passed since Dong Zhi = Days * 3040 + Current Day's Fen
   const accumulatedYearFen = (daysSinceDongZhi * TONG_FA) + currentDayFen;
   const nextTermFen = (Math.floor(accumulatedYearFen / QI_CE) + 1) * QI_CE;
   const fenToNextTerm = nextTermFen - accumulatedYearFen;
 
+  // Now we can calculate the Daily Gua using the Accumulated Fen
+  const calculationState = {
+      daysSinceDongZhi,
+      accumulatedYearFen,
+      daysSinceShuo: 0, // Placeholder, calculated below
+      accumulatedMonthFen: 0, // Placeholder
+      currentTermName: displayTermName,
+      nextTermName: nextJieQiObj.getName(),
+      fenToNextTerm,
+      isBigMonth: false,
+      leapInfo: "",
+      currentHou: ""
+  };
+  
+  const dailyGua = getDailyGuaAdvanced(date, calculationState);
+
   const daysSinceShuo = lunar.getDay() - 1;
   const accumulatedMonthFen = (daysSinceShuo * TONG_FA) + currentDayFen;
-  
+  calculationState.daysSinceShuo = daysSinceShuo;
+  calculationState.accumulatedMonthFen = accumulatedMonthFen;
+
   const leapInfo = lunar.getMonth() < 0 ? `闰 ${Math.abs(lunar.getMonth())} 月` : "平月";
   
   const currentLunarDay = lunar.getDay();
@@ -329,6 +427,15 @@ export const getDayanInfo = (date: Date): DayanDateInfo => {
     const futureDate = lunar.next(daysToCheck);
     isBigMonth = (futureDate.getDay() === 30);
   }
+  calculationState.isBigMonth = isBigMonth;
+  calculationState.leapInfo = leapInfo;
+  
+  // Recalculate Hou based on days into term (simplified)
+  const daysIntoTerm = Math.floor((date.getTime() - displayTermDate.getTime()) / msPerDay);
+  let currentHou = "初候";
+  if (daysIntoTerm >= 5 && daysIntoTerm < 10) currentHou = "次候";
+  else if (daysIntoTerm >= 10) currentHou = "末候";
+  calculationState.currentHou = currentHou;
 
   const nineRoads = getNineRoads(date);
   const planets = getPlanets(date);
@@ -385,20 +492,11 @@ export const getDayanInfo = (date: Date): DayanDateInfo => {
       shuoShi: 89773, 
       synodicMonthFraction: "29 + 1613/3040",
       ceShi: 1110343,
-      tropicalYearFraction: "365 + 743/3040"
+      tropicalYearFraction: "365 + 743/3040",
+      guaDuration: GUA_DURATION,
+      yaoDuration: YAO_DURATION
     },
-    calculation: {
-      daysSinceDongZhi,
-      accumulatedYearFen,
-      daysSinceShuo,
-      accumulatedMonthFen,
-      currentTermName: displayTermName,
-      nextTermName: nextJieQiObj.getName(),
-      fenToNextTerm,
-      isBigMonth, 
-      leapInfo,
-      currentHou
-    },
+    calculation: calculationState,
     astroReport: {
       nineRoads,
       planets,

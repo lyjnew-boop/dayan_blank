@@ -18,12 +18,22 @@ export interface Hexagram {
   description: string;
 }
 
-export interface DailyGua {
-  name: string;
-  symbol: string;
-  yao: string; // "Initial Nine", "Six in Second", etc.
-  yaoIndex: number; // 1-6
-  isDutyGua: boolean; // True if it's one of the 60 Za Gua
+export interface GuaQiState {
+  guaIndex: number; // 0-59 (Which of the 60 Za Gua)
+  daysIntoGua: number; // For UI
+  fenIntoGua: number; // Current accumulated Fen inside this Gua duration
+  yaoIndex: number; // 1-6 (The line), or 7 for "Yong"
+  yaoName: string; // "初九", "九二", or "用九" etc.
+  isYong: boolean; // Is it the "Extra Day/Void Day"
+  currentFenInYao: number; // Fen passed in current Yao
+  totalFenInYao: number; // Total duration of current Yao (3082)
+}
+
+export interface DailyGua extends Hexagram {
+  guaQi: GuaQiState;
+  isDutyGua: boolean;
+  yao: string; // Legacy field for compatibility
+  yaoIndex: number; // Legacy field
 }
 
 export interface SunState {
@@ -57,6 +67,10 @@ export interface DayanMath {
   // Year Algorithm
   ceShi: number; // 1110343 Dividend
   tropicalYearFraction: string; // "365 + 743/3040"
+  
+  // Gua Qi Algorithm
+  guaDuration: number; // 18493 Fen (6 days 253 fen)
+  yaoDuration: number; // 3082 Fen (1 day 42 fen)
 }
 
 export interface CalculationState {
