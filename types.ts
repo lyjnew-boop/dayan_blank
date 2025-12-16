@@ -88,7 +88,7 @@ export interface CalculationState {
   fenToNextTerm: number; // Parts remaining until next term
   
   isBigMonth: boolean; // 30 days vs 29 days
-  leapInfo: string; // e.g., "Normal", "Leap Month"
+  leapInfo: string; // e.g. "Normal", "Leap Month"
   
   currentHou: string; // Initial, Second, or Final Pentad
 }
@@ -125,6 +125,7 @@ export interface PlanetStatus {
   nameEn: string;
   nameCn: string; // Jin, Mu, Shui, Huo, Tu
   position: string; // Approx constellation/direction
+  ecLong: number; // Ecliptic Longitude (Dayan Scale 0-365.25)
   motion: string; // '顺行', '逆行', '留', '疾'
   description: string;
 }
@@ -153,7 +154,10 @@ export interface AstronomicalReport {
   nineRoads: NineRoadsStatus;
   planets: PlanetStatus[];
   eclipse: EclipseForecast;
-  solarPosition: string; // Xiu (Mansion)
+  sunLocation: string; // e.g. "房宿 3.5 度"
+  sunEcLong: number; // Absolute degree (0-365.25)
+  moonLocation: string; // e.g. "心宿 12.1 度"
+  moonEcLong: number; // Absolute degree (0-365.25)
 }
 
 export interface DayanDateInfo {

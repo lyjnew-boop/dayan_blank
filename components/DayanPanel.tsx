@@ -25,37 +25,11 @@ export const DayanPanel: React.FC<Props> = ({ info }) => {
       {/* HEADER SECTION */}
       <DayanHeader info={info} />
 
-      {/* FOUR PILLARS (BAZI) */}
-      <div className="md:col-span-12">
-        <div className={Theme.dayan.card}>
-           <div className="absolute top-0 right-0 p-4 opacity-5 text-amber-500 transform scale-150">
-             <Database size={20} />
-           </div>
-          <SectionHeader title="四柱八字" subtitle="命理基础 · 造化元钥" icon={<Database size={20} />} />
-          <BaZiChart bazi={info.baZi} />
-        </div>
-      </div>
-
       {/* TAI SHI JIAN LOGBOOK + CIVIL ENTRY */}
       <div className="md:col-span-12">
         <TaiShiJianLog info={info} />
-        {/* Note: TaiShiJianLog style container logic might be split but here we stack or compose them. 
-            Refactoring note: Ideally CivilCalendarEntry is inside the logbook visual container in the original design.
-            The TaiShiJianLog component handles the top part, and we can render CivilCalendarEntry right below it 
-            if we passed children, or simply render it inside TaiShiJianLog. 
-            However, based on the previous structure, CivilCalendarEntry was INSIDE the border of the logbook.
-            To allow composition, we modified TaiShiJianLog to accept children or we place it inside TaiShiJianLog directly.
-            For this refactor, I moved CivilCalendarEntry inside TaiShiJianLog component code for cleaner composition, 
-            so we just render TaiShiJianLog here and it includes the Civil Entry. 
-            
-            WAIT: In my file definitions above, TaiShiJianLog DOES NOT include CivilCalendarEntry. 
-            Let's fix the composition in this file.
-        */}
+        {/* Note: CivilCalendarEntry is composed here */}
         <div className={`mt-6 ${Theme.dayan.bgPanel} border ${Theme.colors.borderHighlight} p-1 rounded`}>
-           {/* If we want them visually unified like before, we can put them in a wrapper. 
-               The original design had them sharing a large container. 
-               Let's re-compose properly.
-           */}
            <CivilCalendarEntry info={info} />
         </div>
       </div>
@@ -68,6 +42,17 @@ export const DayanPanel: React.FC<Props> = ({ info }) => {
       {/* TIME KEEPING (BU GUI LOU) */}
       <div className="md:col-span-6">
         <TimeKeepingCard timeKeeping={info.timeKeeping} />
+      </div>
+
+      {/* FOUR PILLARS (BAZI) - Moved Down */}
+      <div className="md:col-span-12">
+        <div className={Theme.dayan.card}>
+           <div className="absolute top-0 right-0 p-4 opacity-5 text-amber-500 transform scale-150">
+             <Database size={20} />
+           </div>
+          <SectionHeader title="四柱八字" subtitle="命理基础 · 造化元钥" icon={<Database size={20} />} />
+          <BaZiChart bazi={info.baZi} />
+        </div>
       </div>
 
       {/* MATH CORE */}

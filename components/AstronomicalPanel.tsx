@@ -57,9 +57,20 @@ export const AstronomicalPanel: React.FC<Props> = ({ info }) => {
         <ReportSection title="一、 基础定点 (入历)">
            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-3">
               <DataField label="入历积日" value={`${info.calculation.daysSinceDongZhi} 日`} />
-              <DataField label="日躔宿度" value={astroReport.solarPosition + " 宿"} />
-              <DataField label="定朔推演" value={info.calculation.daysSinceShuo === 0 ? "今日" : `朔后 ${info.calculation.daysSinceShuo} 日`} />
               <DataField label="当前节气" value={info.solarTerm.name} />
+              <DataField label="定朔推演" value={info.calculation.daysSinceShuo === 0 ? "今日" : `朔后 ${info.calculation.daysSinceShuo} 日`} />
+              <DataField label="月相" value={info.moonPhase} />
+           </div>
+           
+           <div className="mt-5 pt-4 border-t border-amber-900/20 grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-3">
+              <div className="space-y-1">
+                <DataField label="日躔宿度" value={astroReport.sunLocation} highlight />
+                <DataField label="日躔黄道" value={`${astroReport.sunEcLong.toFixed(2)} 度`} />
+              </div>
+              <div className="space-y-1">
+                <DataField label="月离宿度" value={astroReport.moonLocation} highlight />
+                <DataField label="月离黄道" value={`${astroReport.moonEcLong.toFixed(2)} 度`} />
+              </div>
            </div>
         </ReportSection>
 
@@ -101,16 +112,25 @@ export const AstronomicalPanel: React.FC<Props> = ({ info }) => {
 
         {/* Section 3: Five Planets (Bu Wu Xing) */}
         <ReportSection title="三、 步五星 (五纬)">
-           <div className="space-y-1">
+           <div className="space-y-2">
+             <div className="flex text-xs text-stone-500 border-b border-stone-800 pb-2 mb-2 px-3">
+               <span className="w-24">星名</span>
+               <span className="flex-1">宿度 (行度)</span>
+               <span className="w-24 text-right">黄道积度</span>
+               <span className="w-16 text-right">运行</span>
+             </div>
              {astroReport.planets.map((planet, idx) => (
                 <div key={idx} className={Theme.astro.planetRow}>
-                   <div className="flex items-center gap-3 w-32">
+                   <div className="flex items-center gap-3 w-24">
                       <span className="text-amber-600 font-bold">{planet.nameCn}</span>
                    </div>
                    <div className="flex-1 font-mono text-sm text-stone-400">
                       {planet.position}
                    </div>
-                   <div className="text-right">
+                   <div className="w-24 text-right font-mono text-sm text-amber-700">
+                      {planet.ecLong.toFixed(2)}°
+                   </div>
+                   <div className="text-right w-16">
                        <span className={`text-xs px-2 py-0.5 rounded ${
                          planet.motion === '逆行' ? 'bg-red-900/30 text-red-500' : 
                          planet.motion === '留' ? 'bg-amber-900/30 text-amber-500' : 
@@ -128,6 +148,7 @@ export const AstronomicalPanel: React.FC<Props> = ({ info }) => {
         <div className="mt-8 mb-6">
            <div className={Theme.astro.conclusionBox}>
               “观象授时，乃圣王之务。今日五星运行大致安常，{info.calculation.currentTermName}之气正盛。
+              日躔{astroReport.sunLocation.split(' ')[0]}，月宿{astroReport.moonLocation.split(' ')[0]}。
               {astroReport.eclipse.willOccur ? "然需警惕交会之变，宜修德省身。" : "阴阳调和，宜行正事。"}”
            </div>
         </div>

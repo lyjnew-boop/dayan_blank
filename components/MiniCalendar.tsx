@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Clock } from 'lucide-react';
 import { Theme } from '../styles/theme';
 
 interface MiniCalendarProps {
@@ -48,6 +48,17 @@ export const MiniCalendar: React.FC<MiniCalendarProps> = ({ selectedDate, onSele
       const today = new Date();
       onSelectDate(today);
       onClose();
+  };
+
+  const handleTimeChange = (field: 'h' | 'm' | 's', value: string) => {
+    let num = parseInt(value);
+    if (isNaN(num)) num = 0;
+    
+    const d = new Date(selectedDate);
+    if (field === 'h') d.setHours(Math.max(0, Math.min(23, num)));
+    if (field === 'm') d.setMinutes(Math.max(0, Math.min(59, num)));
+    if (field === 's') d.setSeconds(Math.max(0, Math.min(59, num)));
+    onSelectDate(d);
   };
 
   // Calendar logic
@@ -169,8 +180,14 @@ export const MiniCalendar: React.FC<MiniCalendarProps> = ({ selectedDate, onSele
             <button
               key={idx}
               onClick={() => {
-                onSelectDate(d);
-                onClose();
+                // Construct new date but keep current selected time
+                const newDate = new Date(d);
+                newDate.setHours(selectedDate.getHours());
+                newDate.setMinutes(selectedDate.getMinutes());
+                newDate.setSeconds(selectedDate.getSeconds());
+                newDate.setMilliseconds(selectedDate.getMilliseconds());
+                onSelectDate(newDate);
+                // We do NOT close immediately to allow time adjustment
               }}
               className={cellClass}
             >
@@ -180,10 +197,40 @@ export const MiniCalendar: React.FC<MiniCalendarProps> = ({ selectedDate, onSele
         })}
       </div>
       
+      {/* Time Controls */}
+      <div className="border-t border-stone-800 mt-3 pt-2 mb-1">
+        <div className="flex justify-center items-center gap-1 text-stone-400 text-xs">
+            <Clock size={12} className="mr-1" />
+            <input 
+                type="number" 
+                min="0" max="23"
+                value={selectedDate.getHours()} 
+                onChange={e => handleTimeChange('h', e.target.value)} 
+                className={Theme.calendar.timeInput} 
+            />
+            <span>:</span>
+            <input 
+                type="number" 
+                min="0" max="59"
+                value={selectedDate.getMinutes()} 
+                onChange={e => handleTimeChange('m', e.target.value)} 
+                className={Theme.calendar.timeInput} 
+            />
+            <span>:</span>
+            <input 
+                type="number" 
+                min="0" max="59"
+                value={selectedDate.getSeconds()} 
+                onChange={e => handleTimeChange('s', e.target.value)} 
+                className={Theme.calendar.timeInput} 
+            />
+        </div>
+      </div>
+
       {/* Footer */}
       <div className={Theme.calendar.footer}>
          <button onClick={onClose} className={Theme.calendar.footerButton}>
-            关闭
+            确定
          </button>
          <button onClick={handleTodayClick} className={Theme.calendar.footerAction}>
             回到今日

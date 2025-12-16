@@ -32,18 +32,18 @@ const App: React.FC = () => {
   };
 
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.valueAsDate) {
-      // Need to adjust for timezone offset to prevent date jumping
-      const date = new Date(e.target.valueAsDate.getUTCFullYear(), e.target.valueAsDate.getUTCMonth(), e.target.valueAsDate.getUTCDate());
-      setCurrentDate(date);
+    if (e.target.value) {
+      // datetime-local string format: YYYY-MM-DDTHH:mm:ss
+      const date = new Date(e.target.value);
+      if (!isNaN(date.getTime())) {
+        setCurrentDate(date);
+      }
     }
   };
 
-  const formatDateValue = (date: Date) => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+  const formatDateTimeValue = (date: Date) => {
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
   };
 
   return (
@@ -83,8 +83,9 @@ const App: React.FC = () => {
             {/* Native Date Input (Styled) */}
             <div className={Theme.nav.dateInputWrapper}>
               <input 
-                type="date" 
-                value={formatDateValue(currentDate)}
+                type="datetime-local" 
+                step="1"
+                value={formatDateTimeValue(currentDate)}
                 onChange={handleDateChange}
                 className={Theme.nav.dateInput}
               />
