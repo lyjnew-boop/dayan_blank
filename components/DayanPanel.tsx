@@ -1,7 +1,7 @@
 import React from 'react';
 import { DayanDateInfo } from '../types';
 import { HexagramSymbol } from './HexagramSymbol';
-import { Wind, Sun, Moon, Star, Clock, Compass, BookOpen, Divide, CircleDot, MapPin, Calculator, Scroll, Hourglass, Calendar, Activity } from 'lucide-react';
+import { Sun, Clock, Divide, MapPin, Calculator, Scroll, Hourglass, Calendar, Activity } from 'lucide-react';
 
 interface Props {
   info: DayanDateInfo;
@@ -55,7 +55,8 @@ const SimulationRow: React.FC<{ label: string, val1: string, val2: string }> = (
 export const DayanPanel: React.FC<Props> = ({ info }) => {
   const { guaQi } = info.dailyGua;
   // Calculate percentage of Fen passed in the current Yao
-  const yaoProgress = (guaQi.currentFenInYao / guaQi.totalFenInYao) * 100;
+  // Avoid division by zero if something goes wrong, though logic prevents it.
+  const yaoProgress = guaQi.totalFenInYao > 0 ? (guaQi.currentFenInYao / guaQi.totalFenInYao) * 100 : 0;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-12 gap-6 p-4 max-w-7xl mx-auto">
@@ -178,8 +179,8 @@ export const DayanPanel: React.FC<Props> = ({ info }) => {
                                    <span className={`text-xs uppercase tracking-wider ${guaQi.isYong ? 'text-amber-500 font-bold' : 'text-stone-500'}`}>
                                       {guaQi.isYong ? '用九/六 (虚日)' : `爻位: ${guaQi.yaoIndex} / 6`}
                                    </span>
-                                   <div className="w-24 h-1 bg-stone-800 rounded-full overflow-hidden">
-                                      <div className="h-full bg-amber-700" style={{ width: `${Math.min(100, Math.floor(yaoProgress))}%` }}></div>
+                                   <div className="w-24 h-1 bg-stone-800 rounded-full overflow-hidden relative">
+                                      <div className="h-full bg-amber-700 transition-all duration-500" style={{ width: `${Math.min(100, Math.floor(yaoProgress))}%` }}></div>
                                    </div>
                                </div>
                            </div>
@@ -187,7 +188,9 @@ export const DayanPanel: React.FC<Props> = ({ info }) => {
                            <div className="text-sm text-stone-400 mt-2 flex items-center gap-2">
                                <Activity size={14} className="text-amber-800" />
                                <span>当前推演:</span> 
-                               <span className="text-amber-500 font-bold text-lg">{guaQi.yaoName}</span>
+                               <span className={`font-bold text-lg ${guaQi.isYong ? 'text-amber-400' : 'text-amber-600'}`}>
+                                 {guaQi.yaoName}
+                               </span>
                                <span className="text-stone-600 font-mono text-xs">
                                  (本爻积 {Math.round(guaQi.currentFenInYao)}/{guaQi.totalFenInYao} 分)
                                </span>
@@ -202,7 +205,7 @@ export const DayanPanel: React.FC<Props> = ({ info }) => {
            </div>
            
            <div className="mt-3 text-xs text-stone-600 text-center font-mono">
-              算法流程：节气定日 → 六十杂卦轮值 (6日7分) → 六爻定象 (1日42分)
+              算法流程：节气定日 → 六十杂卦轮值 (6日7分/卦) → 六爻定象 (1日42分/爻)
            </div>
         </div>
       </div>

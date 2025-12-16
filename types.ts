@@ -20,11 +20,11 @@ export interface Hexagram {
 
 export interface GuaQiState {
   guaIndex: number; // 0-59 (Which of the 60 Za Gua)
-  daysIntoGua: number; // For UI
+  daysIntoGua: number; // For UI display of days passed
   fenIntoGua: number; // Current accumulated Fen inside this Gua duration
   yaoIndex: number; // 1-6 (The line), or 7 for "Yong"
   yaoName: string; // "初九", "九二", or "用九" etc.
-  isYong: boolean; // Is it the "Extra Day/Void Day"
+  isYong: boolean; // Is it the "Extra Day/Void Day" (The remainder time)
   currentFenInYao: number; // Fen passed in current Yao
   totalFenInYao: number; // Total duration of current Yao (3082)
 }
@@ -90,7 +90,7 @@ export interface CalculationState {
   currentHou: string; // Initial, Second, or Final Pentad
 }
 
-// --- NEW ASTRONOMICAL TYPES ---
+// --- ASTRONOMICAL TYPES ---
 
 export interface PlanetStatus {
   nameEn: string;
@@ -164,6 +164,6 @@ export interface DayanDateInfo {
   // Simulation State
   calculation: CalculationState;
 
-  // NEW: Royal Astronomical Report
+  // Royal Astronomical Report
   astroReport: AstronomicalReport;
 }
