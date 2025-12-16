@@ -1,3 +1,4 @@
+
 export interface SolarTerm {
   name: string;
   date: Date;
@@ -24,6 +25,8 @@ export interface GuaQiState {
   fenIntoGua: number; // Current accumulated Fen inside this Gua duration
   yaoIndex: number; // 1-6 (The line), or 7 for "Yong"
   yaoName: string; // "初九", "九二", or "用九" etc.
+  yaoText: string; // The specific line text/interpretation
+  significance: string; // "Good", "Bad", "Warning", etc.
   isYong: boolean; // Is it the "Extra Day/Void Day" (The remainder time)
   currentFenInYao: number; // Fen passed in current Yao
   totalFenInYao: number; // Total duration of current Yao (3082)
@@ -90,6 +93,32 @@ export interface CalculationState {
   currentHou: string; // Initial, Second, or Final Pentad
 }
 
+// --- BA ZI (Eight Characters) TYPES ---
+
+export interface PillarInfo {
+  ganZhi: string; // e.g. "甲子"
+  gan: string; // e.g. "甲"
+  zhi: string; // e.g. "子"
+  naYin: string; // e.g. "海中金"
+  wuXing: string; // e.g. "木水"
+  shiShenGan: string; // Ten God of Stem (e.g. "比肩")
+  cangGan: string[]; // Hidden Stems (e.g. ["癸"])
+  shiShenZhi: string[]; // Ten Gods of Hidden Stems
+  xunKong: string; // Void/Empty (e.g. "戌亥")
+  shenSha: string[]; // Gods and Evils
+}
+
+export interface BaZiFull {
+  year: PillarInfo;
+  month: PillarInfo;
+  day: PillarInfo;
+  hour: PillarInfo;
+  dayMaster: string; // The Day Stem (Self)
+  wuXingCount: string; // e.g. "1金, 2木, ..."
+  mingGong: string; // Life Palace
+  taiYuan: string; // Conception Month
+}
+
 // --- ASTRONOMICAL TYPES ---
 
 export interface PlanetStatus {
@@ -136,6 +165,9 @@ export interface DayanDateInfo {
   ganZhiMonth: string;
   ganZhiDay: string;
   ganZhiHour: string;
+
+  // New Full BaZi Info
+  baZi: BaZiFull;
 
   // Chapter 1: Zhong Shuo (Terms)
   solarTerm: SolarTerm;

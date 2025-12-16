@@ -1,6 +1,7 @@
-import { Solar, Lunar, JieQi } from 'lunar-typescript';
+
+import { Solar, Lunar, JieQi, LunarUtil } from 'lunar-typescript';
 import SunCalc from 'suncalc';
-import { DayanDateInfo, Hexagram, SunState, DailyGua, AstronomicalReport, PlanetStatus, EclipseForecast, NineRoadsStatus, GuaQiState } from '../types';
+import { DayanDateInfo, Hexagram, SunState, DailyGua, AstronomicalReport, PlanetStatus, EclipseForecast, NineRoadsStatus, GuaQiState, BaZiFull, PillarInfo } from '../types';
 
 // Chang'an (Xi'an) Coordinates - The heart of Dayan Li observations
 const CHANG_AN_LAT = 34.2667;
@@ -67,6 +68,107 @@ const HEXAGRAM_DATA: Record<string, Hexagram> = {
   'default': { name: '未济', symbol: '䷿', binary: '010101', nature: '火水', description: '亨，小狐汔济，濡其尾。' }
 };
 
+// Simplified term list for determining Ying/Suo stages
+const TERMS_ORDER = [
+  '冬至', '小寒', '大寒', '立春', '雨水', '惊蛰', // Ying Chu
+  '春分', '清明', '谷雨', '立夏', '小满', '芒种', // Ying Mo
+  '夏至', '小暑', '大暑', '立秋', '处暑', '白露', // Suo Chu
+  '秋分', '寒露', '霜降', '立冬', '小雪', '大雪'  // Suo Mo
+];
+
+// Specific Yao Explanations for key hexagrams to enhance the UI
+const YAO_EXPLANATIONS: Record<string, string[]> = {
+  'qian': [
+    '初九：潜龙勿用。阳气潜藏，未可施为。',
+    '九二：见龙在田，利见大人。德施普也。',
+    '九三：君子终日乾乾，夕惕若厉，无咎。',
+    '九四：或跃在渊，无咎。进退无恒。',
+    '九五：飞龙在天，利见大人。位正中也。',
+    '上九：亢龙有悔。盈不可久也。'
+  ],
+  'kun': [
+    '初六：履霜，坚冰至。阴始凝也。',
+    '六二：直方大，不习无不利。地道光也。',
+    '六三：含章可贞。以时发也。',
+    '六四：括囊，无咎无誉。慎不害也。',
+    '六五：黄裳，元吉。文在中也。',
+    '上六：龙战于野，其血玄黄。穷之灾也。'
+  ],
+  'zhongfu': [
+    '初九：虞吉，有它不燕。志未变也。',
+    '九二：鸣鹤在阴，其子和之。中心愿也。',
+    '六三：得敌，或鼓或罢，或泣或歌。',
+    '六四：月几望，马匹亡，无咎。',
+    '九五：有孚挛如，无咎。位正当也。',
+    '上九：翰音登于天，贞凶。'
+  ],
+  'fu': [
+    '初九：不远复，无祗悔，元吉。',
+    '六二：休复，吉。',
+    '六三：频复，厉，无咎。',
+    '六四：中行独复。',
+    '六五：敦复，无悔。',
+    '上六：迷复，凶，有灾眚。'
+  ]
+};
+
+const getLineInterpretation = (guaKey: string, yaoIndex: number, isYong: boolean, isYang: boolean): { text: string, significance: string } => {
+  if (isYong) {
+    return {
+      text: isYang ? "用九：见群龙无首，吉。" : "用六：利永贞。",
+      significance: "虚日/变数"
+    };
+  }
+
+  // Look up specific dictionary
+  if (YAO_EXPLANATIONS[guaKey] && YAO_EXPLANATIONS[guaKey][yaoIndex]) {
+    return {
+      text: YAO_EXPLANATIONS[guaKey][yaoIndex],
+      significance: "爻辞"
+    };
+  }
+
+  // Fallback Generator based on position and Yin/Yang
+  // index is 0-5
+  const pos = yaoIndex + 1;
+  const nature = isYang ? "阳" : "阴";
+  let desc = "";
+  let sig = "";
+
+  switch (pos) {
+    case 1:
+      desc = `初${nature}：事物肇始，潜藏勿用，宜静守。`;
+      sig = "潜藏";
+      break;
+    case 2:
+      desc = nature === "阳" 
+        ? `二${nature}：居中得位，利见大人，行事顺遂。` 
+        : `二${nature}：柔顺中正，承顺天道，吉。`;
+      sig = "居中";
+      break;
+    case 3:
+      desc = `三${nature}：位处过刚/过柔，进退维谷，需极其谨慎。`;
+      sig = "危厉";
+      break;
+    case 4:
+      desc = `四${nature}：伴君如伴虎，近尊位而未正，多惧。`;
+      sig = "多惧";
+      break;
+    case 5:
+      desc = nature === "阳"
+        ? `五${nature}：九五之尊，中正当位，元吉。`
+        : `五${nature}：柔居尊位，虚心顺应，吉。`;
+      sig = "尊位";
+      break;
+    case 6:
+      desc = `上${nature}：物极必反，亢龙有悔，宜退不宜进。`;
+      sig = "终极";
+      break;
+  }
+  
+  return { text: desc, significance: sig };
+};
+
 // The 60-Gua Sequence starting from Winter Solstice
 // This cycle corresponds to 365.25 days.
 // The 4 Cardinal Guas (Kan, Li, Zhen, Dui) are excluded.
@@ -79,14 +181,6 @@ const GUA_SEQUENCE: string[] = [
   'zhongfu', 'fu', 'zhun', 'yi', 'zhen', 'shike', 'sui', 'wuwang', 'mingyi', 'bi', 'jiji', 'jiaren', 'feng', 'ge', 'tongren',
   'lin', 'sun', 'jie', 'zhongfu', 'fu', 'zhun', 'yi', 'zhen', 'shike', 'sui', 'wuwang', 'mingyi', 'bi', 'jiji', 'jiaren', 'feng', 'ge', 'tongren',
   'lin', 'sun', 'jie', 'zhongfu', 'fu', 'zhun', 'yi'
-];
-
-// Simplified term list for determining Ying/Suo stages
-const TERMS_ORDER = [
-  '冬至', '小寒', '大寒', '立春', '雨水', '惊蛰', // Ying Chu
-  '春分', '清明', '谷雨', '立夏', '小满', '芒种', // Ying Mo
-  '夏至', '小暑', '大暑', '立秋', '处暑', '白露', // Suo Chu
-  '秋分', '寒露', '霜降', '立冬', '小雪', '大雪'  // Suo Mo
 ];
 
 const getDailyGuaAdvanced = (date: Date, calculation: { accumulatedYearFen: number }): DailyGua => {
@@ -130,20 +224,22 @@ const getDailyGuaAdvanced = (date: Date, calculation: { accumulatedYearFen: numb
   let yaoName = "";
   const positionNames = ["初", "二", "三", "四", "五", "上"];
   
+  const lineChar = isYong ? '0' : binary[yaoIndex]; // placeholder for yong
+  const isYang = (isYong ? (binary.split('1').length - 1 >= 3) : lineChar === '1');
+
   if (isYong) {
-    // Determine if it's a Yang or Yin hexagram based on the count of Yang lines
-    const yangCount = binary.split('').filter(b => b === '1').length;
-    yaoName = yangCount >= 3 ? "用九 (虚日)" : "用六 (虚日)";
+    yaoName = isYang ? "用九 (虚日)" : "用六 (虚日)";
   } else {
     // Binary string index 0 is Bottom (Initial line)
-    // Ensure we map correctly.
-    const lineVal = binary[yaoIndex]; // 0 or 1
-    const valName = lineVal === '1' ? "九" : "六";
+    const valName = isYang ? "九" : "六";
     
     if (yaoIndex === 0) yaoName = `初${valName}`;
     else if (yaoIndex === 5) yaoName = `上${valName}`;
     else yaoName = `${valName}${positionNames[yaoIndex]}`;
   }
+
+  // 5. Get Interpretation
+  const interpretation = getLineInterpretation(guaKey, yaoIndex, isYong, isYang);
 
   return {
     ...hexData,
@@ -154,6 +250,8 @@ const getDailyGuaAdvanced = (date: Date, calculation: { accumulatedYearFen: numb
       fenIntoGua,
       yaoIndex: yaoIndex + 1, // 1-based for UI
       yaoName,
+      yaoText: interpretation.text,
+      significance: interpretation.significance,
       isYong,
       currentFenInYao,
       totalFenInYao: isYong ? (GUA_DURATION - 6 * YAO_DURATION) : YAO_DURATION
@@ -229,6 +327,128 @@ const getPrevDongZhi = (date: Date): Date => {
     }
   }
   return prevDZ || new Date(year - 1, 11, 22); 
+};
+
+// --- BA ZI CALCULATION ---
+
+const getBaZiFull = (lunar: Lunar): BaZiFull => {
+  const eightChar = lunar.getEightChar();
+  eightChar.setSect(1); // Set to Mode 2 (Default usually works, but explicit is safer for some libraries)
+
+  // We need to manually construct the Pillar Info because the Lunar object accessors are spread out
+  
+  // Helpers
+  const getPillar = (
+    gan: string, 
+    zhi: string, 
+    naYin: string, 
+    xunKong: string, 
+    shenSha: string[], 
+    shiShenGan: string, 
+    shiShenZhi: string[],
+    cangGan: string[]
+  ): PillarInfo => ({
+    ganZhi: `${gan}${zhi}`,
+    gan,
+    zhi,
+    naYin,
+    wuXing: `${LunarUtil.WU_XING_GAN[gan]}${LunarUtil.WU_XING_ZHI[zhi]}`,
+    xunKong,
+    shenSha,
+    shiShenGan,
+    shiShenZhi,
+    cangGan
+  });
+
+  // Year
+  const yearPillar = getPillar(
+    eightChar.getYearGan(),
+    eightChar.getYearZhi(),
+    eightChar.getYearNaYin(),
+    eightChar.getYearXunKong(),
+    // ShenSha for Year is complex, typically we show Day ShenSha on pillars, but Lunar lib provides lists.
+    // We will aggregate common ShenSha. Note: Lunar-Typescript 'getShenSha' usually refers to Day ShenSha.
+    [], // Basic Lunar obj doesn't strictly attach ShenSha to 'Year Pillar' object directly in easy list, we leave empty or custom calc
+    eightChar.getYearShiShenGan(), // Relation of Year Gan to Day Master
+    eightChar.getYearShiShenZhi(),
+    eightChar.getYearHideGan()
+  );
+
+  // Month
+  const monthPillar = getPillar(
+    eightChar.getMonthGan(),
+    eightChar.getMonthZhi(),
+    eightChar.getMonthNaYin(),
+    eightChar.getMonthXunKong(),
+    [],
+    eightChar.getMonthShiShenGan(),
+    eightChar.getMonthShiShenZhi(),
+    eightChar.getMonthHideGan()
+  );
+
+  // Day
+  const dayPillar = getPillar(
+    eightChar.getDayGan(),
+    eightChar.getDayZhi(),
+    eightChar.getDayNaYin(),
+    eightChar.getDayXunKong(),
+    // Day Pillar Shen Sha often includes self-factors
+    [],
+    "日主", // Day Master (Self)
+    eightChar.getDayShiShenZhi(),
+    eightChar.getDayHideGan()
+  );
+
+  // Hour
+  const hourPillar = getPillar(
+    eightChar.getTimeGan(),
+    eightChar.getTimeZhi(),
+    eightChar.getTimeNaYin(),
+    eightChar.getTimeXunKong(),
+    [],
+    eightChar.getTimeShiShenGan(),
+    eightChar.getTimeShiShenZhi(),
+    eightChar.getTimeHideGan()
+  );
+
+  // Ming Gong (Life Palace)
+  const mingGong = eightChar.getMingGong();
+  const taiYuan = eightChar.getTaiYuan();
+
+  // Wu Xing Count Calculation
+  const wuXingMap: Record<string, number> = { "金": 0, "木": 0, "水": 0, "火": 0, "土": 0 };
+  
+  const addWx = (wx: string) => {
+    // Check if wx exists in the map
+    if (wuXingMap.hasOwnProperty(wx)) {
+      wuXingMap[wx]++;
+    }
+  };
+
+  addWx(LunarUtil.WU_XING_GAN[eightChar.getYearGan()]);
+  addWx(LunarUtil.WU_XING_ZHI[eightChar.getYearZhi()]);
+  addWx(LunarUtil.WU_XING_GAN[eightChar.getMonthGan()]);
+  addWx(LunarUtil.WU_XING_ZHI[eightChar.getMonthZhi()]);
+  addWx(LunarUtil.WU_XING_GAN[eightChar.getDayGan()]);
+  addWx(LunarUtil.WU_XING_ZHI[eightChar.getDayZhi()]);
+  addWx(LunarUtil.WU_XING_GAN[eightChar.getTimeGan()]);
+  addWx(LunarUtil.WU_XING_ZHI[eightChar.getTimeZhi()]);
+
+  const wuXingCount = Object.entries(wuXingMap)
+    .filter(([_, count]) => count > 0)
+    .map(([wx, count]) => `${count}${wx}`)
+    .join(" ");
+  
+  return {
+    year: yearPillar,
+    month: monthPillar,
+    day: dayPillar,
+    hour: hourPillar,
+    dayMaster: eightChar.getDayGan(),
+    wuXingCount: wuXingCount, 
+    mingGong,
+    taiYuan
+  };
 };
 
 // --- ASTRONOMICAL CALCULATIONS ---
@@ -443,6 +663,9 @@ export const getDayanInfo = (date: Date): DayanDateInfo => {
   const planets = getPlanets(date);
   const eclipse = getEclipseForecast(date, lunar, nineRoads.moonLatitude);
   
+  // Get Full BaZi
+  const baZi = getBaZiFull(lunar);
+
   return {
     gregorianDate: date,
     lunarDateStr: `${lunar.getYearInChinese()}年 ${lunar.getMonthInChinese()}月${lunar.getDayInChinese()}`,
@@ -450,6 +673,7 @@ export const getDayanInfo = (date: Date): DayanDateInfo => {
     ganZhiMonth,
     ganZhiDay,
     ganZhiHour,
+    baZi,
     solarTerm: {
       name: displayTermName,
       date: displayTermDate,

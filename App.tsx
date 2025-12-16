@@ -2,11 +2,13 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { getDayanInfo } from './services/lunarService';
 import { DayanPanel } from './components/DayanPanel';
 import { AstronomicalPanel } from './components/AstronomicalPanel';
+import { MiniCalendar } from './components/MiniCalendar';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, RotateCcw, BookOpen, Star } from 'lucide-react';
 
 const App: React.FC = () => {
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [viewMode, setViewMode] = useState<'civil' | 'royal'>('civil');
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   
   // Calculate info based on current date
   const dayanInfo = useMemo(() => getDayanInfo(currentDate), [currentDate]);
@@ -35,6 +37,13 @@ const App: React.FC = () => {
     }
   };
 
+  const formatDateValue = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   return (
     <div className="min-h-screen bg-stone-950 text-stone-200 selection:bg-amber-900 selection:text-white flex flex-col">
       
@@ -50,7 +59,8 @@ const App: React.FC = () => {
             </span>
           </div>
 
-          <div className="flex items-center gap-3 bg-stone-800 p-1.5 rounded-lg border border-stone-700">
+          {/* Date Controls */}
+          <div className="flex items-center gap-2 bg-stone-800 p-1.5 rounded-lg border border-stone-700 relative">
             <button 
               onClick={handlePrevDay}
               className="p-2 hover:bg-stone-700 rounded text-stone-400 hover:text-amber-400 transition-colors"
@@ -59,15 +69,22 @@ const App: React.FC = () => {
               <ChevronLeft size={24} />
             </button>
             
-            <div className="relative group">
-              <div className="flex items-center gap-2 px-4 py-1 cursor-pointer">
-                <CalendarIcon size={20} className="text-amber-600" />
-                <span className="font-mono text-base">{currentDate.toISOString().split('T')[0]}</span>
-              </div>
+            {/* Calendar Toggle Button */}
+            <button 
+              onClick={() => setIsCalendarOpen(!isCalendarOpen)}
+              className={`p-2 rounded transition-colors ${isCalendarOpen ? 'text-amber-500 bg-stone-700' : 'text-amber-600 hover:bg-stone-700 hover:text-amber-400'}`}
+              title="打开日历视图"
+            >
+              <CalendarIcon size={20} />
+            </button>
+
+            {/* Native Date Input (Styled) */}
+            <div className="relative group px-1">
               <input 
                 type="date" 
-                className="absolute inset-0 opacity-0 cursor-pointer"
+                value={formatDateValue(currentDate)}
                 onChange={handleDateChange}
+                className="bg-transparent text-stone-200 font-mono text-base border-none outline-none focus:ring-1 focus:ring-amber-700/50 rounded px-2 py-1 [&::-webkit-calendar-picker-indicator]:hidden cursor-pointer hover:bg-stone-700/50 transition-colors"
               />
             </div>
 
@@ -78,6 +95,17 @@ const App: React.FC = () => {
             >
               <ChevronRight size={24} />
             </button>
+
+            {/* Popup Calendar */}
+            {isCalendarOpen && (
+              <div className="absolute top-full mt-4 left-1/2 -translate-x-1/2 z-50">
+                 <MiniCalendar 
+                    selectedDate={currentDate} 
+                    onSelectDate={setCurrentDate} 
+                    onClose={() => setIsCalendarOpen(false)}
+                 />
+              </div>
+            )}
           </div>
 
           <button 
@@ -89,6 +117,11 @@ const App: React.FC = () => {
           </button>
         </div>
       </nav>
+
+      {/* Backdrop for Calendar */}
+      {isCalendarOpen && (
+         <div className="fixed inset-0 z-40 bg-black/10" onClick={() => setIsCalendarOpen(false)}></div>
+      )}
 
       {/* View Switcher Tabs */}
       <div className="border-b border-stone-800 bg-stone-950">
